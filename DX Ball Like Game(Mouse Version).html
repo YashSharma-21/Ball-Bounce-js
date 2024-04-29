@@ -1,0 +1,319 @@
+<html>
+  <head>
+    <title>
+      DX Ball Like Game
+    </title>
+    <style>
+    #bar
+    {
+      background-color: red;
+      position: absolute;
+      top: 100px;
+      left: 0px;
+      height: 300px;
+      width: 30px;
+    }
+
+    #ball
+    {
+      background-color: white;
+      border-radius: 50px;
+      width: 30px;
+      height: 30px;
+      position: absolute;
+      top: 100px;
+      left: 100px;
+    }
+
+    #score
+    {
+      position: absolute;
+      background: black;
+      color: white;
+      width: 200px;
+      height: 100px;
+      font-size: 25px;
+
+
+
+    }
+
+    </style>
+  </head>
+  <body style="background-color: black;">
+
+    <div id="bar"></div>
+    <div id="ball"></div>
+    <div id="score"></div>
+
+    <script>
+
+let bar=document.querySelector("#bar");
+let ball=document.querySelector("#ball");
+let scoreDiv=document.querySelector("#score");
+let movementUnit=10;
+
+let barTop=100; // make this match the #bar {top} property if possible
+let barHeight=300;
+let barWidth=30;
+let ballLeft=100,ballTop=100;
+let ballMode=1;
+let ballRadius=15;
+let ballMovementUnit=3;
+let score=0;
+let lives=3;
+let scoreThreshold=5;
+let autoHandle=!false;
+
+
+if(autoHandle)
+{
+  setInterval(()=>
+  {
+    if(ballMode==2 || ballMode==1 || ballLeft>innerWidth*0.25)
+      return;
+
+    barTop=ballTop-ballRadius*2;
+    if(barTop>innerHeight-barHeight+1)
+      barTop=innerHeight-barHeight;
+
+    else if(barTop<0)
+      barTop=0;
+
+
+    bar.style.top=`${barTop}px`
+
+
+  },0);
+
+
+}
+
+function moveBarUp()
+{
+  barTop-=movementUnit;
+  if(barTop<0)
+    barTop=0;
+
+  bar.style.top=`${barTop}px`;
+}
+
+function moveBarDown()
+{
+  barTop+=movementUnit;
+  if(barTop>innerHeight-barHeight+1)
+    barTop=innerHeight-barHeight+1;
+
+  bar.style.top=`${barTop}px`;
+}
+
+
+function ballMove()
+{
+  //console.log("ball move");
+
+  switch(ballMode)
+  {
+    case 1: ballTop-=ballMovementUnit; ballLeft+=ballMovementUnit; break;
+    case 2: ballTop+=ballMovementUnit; ballLeft+=ballMovementUnit; break;
+    case 3: ballTop+=ballMovementUnit; ballLeft-=ballMovementUnit; break;
+    case 4: ballTop-=ballMovementUnit; ballLeft-=ballMovementUnit; break;
+
+  }
+
+  if(ballMode==1 && ballTop<0)
+  {
+    ballTop=0;
+    ballMode=2;
+  }
+
+  else if(ballMode==4 && ballTop<0)
+  {
+    ballTop=0;
+    ballMode=3;
+  }
+
+  else if(ballMode==2 && ballTop> innerHeight-(2*ballRadius)+1)
+  {
+    ballTop=innerHeight-(2*ballRadius);
+    ballMode=1;
+  }
+
+  else if(ballMode==3 && ballTop> innerHeight-(2*ballRadius)+1)
+  {
+    ballTop=innerHeight-(2*ballRadius);
+    ballMode=4;
+  }
+
+  else if(ballMode==2 && ballLeft> innerWidth-(2*ballRadius)+1)
+  {
+    ballLeft=innerWidth-(2*ballRadius);
+    ballMode=3;
+  }
+
+  else if(ballMode==1 && ballLeft> innerWidth-(2*ballRadius)+1)
+  {
+    ballLeft=innerWidth-(2*ballRadius);
+    ballMode=4;
+  }
+
+  else if(ballMode==3 && ballLeft<0)
+  {
+    ballLeft=0;
+    ballMode=2;
+  }
+
+  else if(ballMode==4 && ballLeft<0)
+  {
+    ballLeft=0;
+    ballMode=1;
+  }
+
+  ball.style.top=`${ballTop}px`;
+  ball.style.left=`${ballLeft}px`;
+  //console.log(ballTop,ballLeft);
+}
+
+window.addEventListener("mousemove",event=>
+{
+    barTop=event.clientY;
+
+
+
+  if(barTop>innerHeight-barHeight+1)
+    barTop=innerHeight-barHeight;
+
+  else if(barTop<0)
+    barTop=0;
+
+
+    bar.style.top=`${barTop}px`
+});
+
+function incrementScore()
+{
+
+
+  if(++score%scoreThreshold==0)
+    lives++;
+
+
+  scoreDiv.innerHTML=`Score: ${score}<br>Lives: ${lives}`;
+
+}
+
+
+function setMissedBall()
+{
+  ball.style.background="orange";
+  ball.textContent="💥";
+  setTimeout(()=>
+  {
+    ball.style.background="white";
+    ball.textContent="";
+  },500);
+}
+
+function checkImpact()
+{
+  let x=ballLeft+ballRadius,y=ballTop+ballRadius;
+
+  if(ballMode==3 && y>=barTop && y<=barTop+barHeight-1 && ballLeft<=barWidth)
+  {
+    ballLeft=barWidth;
+    ballMode=2;
+    incrementScore();
+  }
+
+  else if(ballMode==4 && y>=barTop && y<=barTop+barHeight-1 && ballLeft<=barWidth)
+  {
+    ballLeft=barWidth;
+    ballMode=1;
+    incrementScore();
+  }
+
+                          //This condition tries to prevent the lives from decrementing more than once
+  else if(ballLeft<=0 && (ballMode==3 || ballMode==4))
+  {
+    lives--;
+    setMissedBall();
+    setScoreArea();
+
+    if(lives!=0)
+      return;
+
+    clearInterval(ballMoveId);
+    clearInterval(checkImpactId);
+    gameOver();
+  }
+}
+
+let ballMoveId=setInterval(ballMove,0);
+let checkImpactId=setInterval(checkImpact,0);
+
+
+function gameOver()
+{
+  bar.remove();
+  ball.remove();
+
+  let p=document.createElement("p");
+  p.style.position="relative";
+  p.style.top=(innerHeight/2)*0.35+"px";
+  p.style.background="black";
+  p.style.textAlign="center";
+  p.style.fontSize="100px";
+  p.style.color="red";
+  p.textContent="Game Over";
+
+
+  document.body.appendChild(p);
+}
+
+
+function setStarBackground(n)
+{
+  for(let i=1;i<=n;i++)
+  {
+    let minX=0;
+    let maxX=innerWidth-1;
+    let minY=0;
+    let maxY=innerHeight-1;
+    let r,g,b;
+
+    let x,y;
+    x=Math.floor(Math.random()*(maxX-minX+1))+minX;
+    y=Math.floor(Math.random()*(maxY-minY+1))+minY;
+    r=Math.floor(Math.random()*256);
+    g=Math.floor(Math.random()*256);
+    b=Math.floor(Math.random()*256);
+
+
+    let div=document.createElement("div");
+    div.style.position="absolute";
+    div.style.background=`rgb(${r},${g},${b})`;
+    div.style.left=x+"px";
+    div.style.top=y+"px";
+    div.style.height=div.style.width="2px";
+
+    document.body.appendChild(div);
+  }
+
+}
+
+
+function setScoreArea()
+{
+  scoreDiv.style.top=10+"px";
+  scoreDiv.style.left=`${innerWidth-200}px`;
+  scoreDiv.innerHTML=`Score: ${score}<br>Lives: ${lives}`;
+}
+
+setStarBackground(500);
+setScoreArea();
+
+
+    </script>
+
+  </body>
+</html>
